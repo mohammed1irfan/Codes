@@ -1,0 +1,34 @@
+Kubernetes Instalation Master- with 2 worker Node
+
+In All Instance Master as well as Node
+sudo su
+apt-get update
+apt-get install apt-transport-https
+apt install docker.io -y
+docker --version
+systemctl start docker
+systemctl enable docker
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add
+vim /etc/apt/sources.list.d/kubernetes.list
+add this on above file (deb http://apt.kubernetes.io/ kubernetes-xenial main)
+apt-get update
+apt-get install -y kubelet kubeadm kubectl kubernetes-cni
+
+# BOOTSTRAPPING THE MASTER NODE (IN MASTER)
+mkdir -p /etc/containerd
+containerd config default | tee /etc/containerd/config.toml
+kubeadm init
+mkdir -p $HOME/.kube
+cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+chown $(id -u):$(id -g) $HOME/.kube/config
+vim /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+add this (Environment="KUBELET_SYSTEM_PODS_ARGS=--pod-manifest-path=/etc/kubernetes/manifests --allow-privileged=true --fail-swap-on=false")
+systemctl daemon-reload
+systemctl restart kubelet
+kubeadm token create  --print-join-command
+Every time you will get new kubeadm join 10.0.1.63:6443 --token ao8k7q.l10dh25pia9dgla8 --discovery-token-ca-cert-hash sha256:ff2e9fcb22cca5636e706da130934309fdb6429d989c91789e95e15debf79f90
+kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/v0.22.2/Documentation/k8s-old-manifests/kube-flannel-rbac.yml
+
+To Worker Nodes joinging
+kubeadm join 10.0.1.63:6443 --token ao8k7q.l10dh25pia9dgla8 --discovery-token-ca-cert-hash sha256:ff2e9fcb22cca5636e706da130934309fdb6429d989c91789e95e15debf79f90
